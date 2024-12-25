@@ -10,14 +10,53 @@
     <div class="profile-container">
         <h2>Welcome, <%= username %>!</h2>
         <button onclick="location.href='/logout'">Logout</button>
+        
+        <h3>Online Users</h3>
+        <ul id="userList">
+            <% onlineUsers.forEach(function(user) { %>
+                <li onclick="selectUser ('<%= user %>')"><%= user %></li>
+            <% }) %>
+        </ul>
+
         <div class="chat-container">
+            <h3>Chat with <span id="chatWith">Select a user to chat</span></h3>
             <ul id="messages"></ul>
             <form id="form" action="">
-                <input id="input" autocomplete="off" /><button>Send</button>
+                <input id="input" autocomplete="off" placeholder="Type a message..." />
+                <button>Send</button>
             </form>
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/script.js"></script>
+    <script>
+        let selectedUser  = '';
+        
+        function selectUser (user) {
+            selectedUser  = user;
+            document.getElementById('chatWith').innerText = user;
+        }
+
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (input.value && selectedUser ) {
+                socket.emit('chat message', { to: selectedUser , from: '<%= username %>', message: input.value });
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', function(data) {
+            const item = document.createElement('li');
+            item.textContent = `${data.from}: ${data.message}`;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        socket.emit('join', '<%= username %>'); // Notify server that user has joined
+    </script>
 </body>
 </html>
